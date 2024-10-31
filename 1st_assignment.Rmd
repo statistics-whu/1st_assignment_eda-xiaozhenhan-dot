@@ -1,154 +1,304 @@
 ---
-title: "第一次作业你的报告题目"
-CJKmainfont: Songti SC
-author: "your name"
-date: "`r Sys.Date()`"
+title: "Github第一次作业"
+author: "肖振翰"
+date: "2024-10-29"
 output:
-  pdf_document:
-    latex_engine: xelatex
-  word_document:
-    toc: yes
+  word_document: default
   html_document:
-    code_folding: show
-    fig_caption: yes
-    fig_width: 10
-    highlight: tango
-    number_sections: yes
-    theme: cosmo
-    toc: yes
+    df_print: paged
+  pdf_document: default
 ---
+
 ```{r setup, include = FALSE,echo = FALSE}
 knitr::opts_chunk$set(echo = FALSE,error = FALSE, warning = FALSE, message = FALSE,
                       out.width = "100%", split = FALSE, fig.align = "center")
+
 #load library
 library(tidyverse)
 library(kableExtra)
 library(lubridate)
 library(scales)
 library(plotly)
-library(patchwork)
-library(ggrepel)
+library(dplyr)
 ```
-
-# 你的主要发现
-
-1. 发现1
-
-1. 发现2
-  
-1. 发现3
-    
 
 # 数据介绍
 
 本报告**链家**数据获取方式如下：
     
-报告人在2023年9月12日获取了[链家武汉二手房网站](https://wh.lianjia.com/ershoufang/)数据。
+报告人在2023年9月12日获取了[链家武汉二手房网站](https://wh.lianjia.com/ershoufang)数据。
     
 - 链家二手房网站默认显示100页，每页30套房产，因此本数据包括3000套房产信息；
     
 - 数据包括了页面可见部分的文本信息，具体字段及说明见作业说明。
 
  **说明：**数据仅用于教学；由于不清楚链家数据的展示规则，因此数据可能并不是武汉二手房市场的随机抽样，结论很可能有很大的偏差，甚至可能是错误的。
-    
+
 ```{r}
 # 载入数据和预处理
 
-lj<- read_csv("/Users/jameschen/Documents/02_Teaching/12_quantitative_thinking_R/data/2023-09-12_cleaned.csv")
-# EDA ---------------------------------------------------------------------
 
-## 如下语句可以解决画图中的中文显示问题，当然你可以用showtext包来解决
 
-theme_set(theme(text = element_text(family="Songti SC",size = 10))) #这里family设置成你系统中的中文字体名。
 
-# 做一些数据预处理，比如把字符型变成factor。
-
+setwd("c:\\users\\肖\\Desktop\\Github第一次作业")
 ```
 
 # 数据概览
-
-数据表（lj)共包括`r names(lj)`等`r ncol(lj)`个变量,共`r nrow(lj)`行。表的前10行示例如下：
-
 ```{r}
-lj %>% 
+#数据表共包括
+data%>% 
   head(10) %>%
   kable(caption = "武汉链家二手房") %>% 
   kable_styling()
 ```
-
-各变量的简短信息：
 ```{r}
-glimpse(lj)
+#各变量的简短信息：
+glimpse(data)
+```
+```{r}
+
+```
+```{r}
+#可以看到
+#直观结论1
+   # 这个数据表里有三千条数据。包含小区名称、小区位置、房屋总价、房屋每平方的价格、几个卧室几个厅、建筑面积、主要朝向、次要朝向、装修状况、楼栋总层数、房屋楼层、房屋风格、关注人数、是否靠近地铁、是否满2年、是否有钥匙。
+
 ```
 
-各变量的简短统计：
 ```{r}
-summary(lj)
+#直观结论2
+#字符型数据：小区名称，小区位置，主要朝向，次要朝向，装修状况，房屋楼层，房屋风格，长度都为三千。
+  #逻辑型数据：是否靠近地铁，是否满2年，是否有钥匙
+  #数值类数据：房屋总价，房屋每平方的价格，几个卧室，几个厅，建筑面积，楼栋总层数，关注人数
+  #数值类数据分别展示了最小值，1/4分位数，中位数，平均值，3/4分位数，最大值
+  
 ```
 
-可以看到：
+```{r}
+#探索性分析
+data
 
-- 直观结论1
+```
+```{r}
+#变量1房屋每平米的价格的图形
+#绘制每平米价格的直方图
+ggplot(data , aes(x = price_sqm)) +
+  geom_histogram(bins = 30, fill = "blue", color = "black") +
+  labs(x = "Price per Square Meter", y = "Count", title = "Distribution of Price per Square Meter")
+```
 
-- 直观结论2
+```{r}
+# 绘制每平米价格的箱线图
+# 绘制每平米价格的箱线图
+ggplot(data, aes(y = price_sqm)) +
+  geom_boxplot(fill = "lightblue", color = "black") +
+  labs(y = "Price per Square Meter", title = "Boxplot of Price per Square Meter")
+```
 
-- ...
+```{r}
+#发现
+从这些图形中，可以观察到以下发现：
 
-# 探索性分析
+直方图：
 
-## 变量1的数值描述与图形
+分布形状：data数据中“每平米价格"，服从于近似的正太分布,帮助我们了解价格的分布是否对称，是否存在偏态。
+集中趋势：直方图的峰值可以指示价格的集中趋势（如平均价格或中位数）。
+离散程度：直方图的宽度和形状可以帮助我们了解价格的离散程度或变异性。
+箱线图：
 
-发现：
+中位数：箱线图的中间线表示价格的中位数，提供了对中心趋势的另一种视角。
+四分位数：箱子的上下界表示第一四分位数（Q1）和第三四分位数（Q3），展示了价格的中间50%的分布范围。
 
-- 发现1
 
-- 发现2
+```
 
+```{r}
 ## 变量2的数值描述与图形
 
+# 变量2：bedrooms的数值描述与图形
+#最小值和最大值
+range(data$bedrooms)
+#平均数
+mean(data$bedrooms)
+#中位数
+median(data$bedrooms)
+#四分位距
+IQR(data$bedrooms) 
+#众数
+mad(data$bedrooms)
+#方差
+var(data$bedrooms)
+#标准差
+sd(data$bedrooms)
+```
+```{r}
+
+ggplot(data, aes(x = bedrooms)) +
+  geom_histogram(bins = 30, fill = "blue", color = "black") +
+  labs(x = "Number of Bedrooms", y = "Count", title = "Distribution of Number of Bedrooms")
+```
+
+```{r}
+# 计算每个卧室数量的频数和比例
+bedrooms_summary <- data %>%
+  count(bedrooms, sort = TRUE) %>%
+  mutate(prop = n / sum(n))
+
+print(bedrooms_summary)
+
+
+```
+
+```{r}
+# 创建条形图展示频数
+ggplot(bedrooms_summary, aes(x = bedrooms, y = n)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(x = "Number of Bedrooms", y = "Count", title = "Count of Bedrooms")
+
+# 创建条形图展示比例
+ggplot(bedrooms_summary, aes(x = bedrooms, y = prop)) +
+  geom_bar(stat = "identity", fill = "green") +
+  scale_y_continuous(labels = scales::percent) +  # 将y轴标签转换为百分比
+  labs(x = "Number of Bedrooms", y = "Proportion", title = "Proportion of Bedrooms")
+```
+
 发现：
 
 - 发现1
+  大多数房产集中在特定的卧室数量2-3个, 人们更钟情于购买3个卧室的房子，其次是2个卧室的房子。
 
 - 发现2
-
+  卧室数量越多，房产的价格越高。
+  
+```{r}
 ## 变量...的数值描述与图形
 
-发现：
+# property_region 的词条频次图
+
+```
+```{r}
+
+
+# 计算每个地区的频数
+region_counts <- data %>%
+  count(property_region, sort = TRUE)
+
+
+# 创建直方图展示频数
+ggplot(region_counts, aes(x = property_region, y = n)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(x = "Property Region", y = "Count", title = "Frequency of Property Regions")
+
+```
+  发现：
 
 - 发现1
-
+  白沙洲的房子供应最多，其次是盘龙城，四新，光谷东等。
+  
 - 发现2
+  供应房子多的地方大多都位于郊区，意味着市区土地有限，人口朝郊区外扩。
+  
+  
+  ## 探索问题1：面积大的房子，每平米的价格更低还是更高？
+```{r}
+ # 检查并处理缺失值
+# 计算描述性统计量
+library(dplyr)
+library(ggplot2)
+summary_stats <- data %>%
+  summarise(
+    Mean_Area = mean(building_area, na.rm = TRUE),
+    Median_Area = median(building_area, na.rm = TRUE),
+    Mean_Price_per_sqm = mean(price_sqm, na.rm = TRUE),
+    Median_Price_per_sqm = median(price_sqm, na.rm = TRUE)
+  )
+print(summary_stats)
 
-## 探索问题1
+# 创建散点图
+ggplot(data, aes(x = building_area, y = price_sqm)) +
+  geom_point(alpha = 0.5) +
+  labs(x = "Building Area", y = "Price per Square Meter", title = "Relationship between Building Area and Price per Square Meter")
 
-发现：
+# 计算每平米价格的平均值
+
+area_price_mean <- data %>%
+  mutate(area_group = cut_width(building_area, 50, labels = FALSE)) %>%
+  group_by(area_group) %>%
+  summarise(Mean_Price_per_sqm = mean(price_sqm, na.rm = TRUE)) %>%
+  ungroup()
+
+# 创建每平米价格的平均值的线图
+ggplot(area_price_mean, aes(x = area_group, y = Mean_Price_per_sqm)) +
+  geom_line() +
+  labs(x = "Building Area Interval", y = "Mean Price per Square Meter", title = "Mean Price per Square Meter by Building Area Interval")
+
+```
+ 发现：总体面积大的房子，每平米价格更高。房间越多，越明显。
 
 - 发现1
+  总体上，面积大的房子，每平米价格更高
 
 - 发现2
+  1，2，3室的房子，面积对每平米价格的影响不大。 4，5室的房子随着面积越大，每平米价格更高。6，7室的样本少于30，无法得出结论
+  
+  
+  ## 探索问题2：楼层高低对每平米价格的影响？
+```{r}
+summary_stats <- data %>%
+  summarise(
+    Mean_Floor = mean(property_t_height, na.rm = TRUE),
+    Median_Floor = median(property_t_height, na.rm = TRUE),
+    Mean_Price_per_sqm = mean(price_sqm, na.rm = TRUE),
+    Median_Price_per_sqm = median(price_sqm, na.rm = TRUE)
+  )
+print(summary_stats)
+```
+```{r}
+ggplot(data, aes(x = property_t_height, y = price_sqm)) +
+  geom_point(alpha = 0.5) +
+  labs(x = "Total Floor Height", y = "Price per Square Meter", title = "Relationship between Floor Height and Price per Square Meter")
+```
+  
+发现：目前3000个样本得出来的初步结论：楼层越低，房价越高。
 
-## 探索问题2
+- 发现1 
+  Mean_Price_per_sqm给出了数据集中所有房产的平均价格。如果这个值较高，表明市场整体价格水平较高。
 
-发现：
+- 发现2
+  Median_Price_per_sqm不受极端高或极端低价格影响。
+
+## 探索问题3：什么类型的房子（几室几厅）更受人关注？
+```{r}
+# 每个卧室和客厅数量组合的关注度总和
+room_attention <- data %>%
+  group_by(bedrooms, livingrooms) %>%
+  summarise(Total_Followers = sum(followers, na.rm = TRUE)) %>%
+
+# 关注度条形图
+ggplot(room_attention, aes(x = paste(bedrooms, livingrooms), y = Total_Followers)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(x = "Bedrooms and Livingrooms", y = "Total Followers", title = "Total Followers by Bedroom and Livingroom Combination")
+```
+
+发现：某些特定的中规中矩的卧室和客厅数量组合比其他组合更受欢迎。
 
 - 发现1
-
+  3室2厅的房子更关注，是市面上的主流房型
+  
 - 发现2
-
-## 探索问题3
-
-发现：
-
-- 发现1
-
-- 发现2
-
----
-
-# 发现总结
+  户型组合可以帮助我们理解房产市场中不同类型房产的受欢迎程度，为我这种刚需购房者提供有价值的见解。
+  
+  # 发现总结
 
 用1-3段话总结你的发现。
+  1、特定户型的房产在市场中获得了更多的关注。特别是适中的卧室数量和客厅的户型，如三室两厅，这类户型
+  因其满足正常的居住需求而受到欢迎。
+
+  2、市场对于中等规模的户型有较高的需求。这与房地产走势、家庭结构或经济状况有关，表明购房者更倾向于
+  寻找既舒适又实用的居住空间。
+
+  3、关注度高的户型与价格、位置等等因素有关，这些因素影响了购房者的决策。
+
 
 
 
